@@ -7,19 +7,14 @@
     <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-amber.css">
 
 
-    <!-- <script type="text/javascript" src="main.js"/></script> -->
-    <script>if (window.DeviceOrientationEvent) {
-      // Our browser supports DeviceOrientation
-      alert("supported")
-    } else {
-      alert("not supported")
-    }
-  </script>
+    <script type="text/javascript" src="player.js"/></script>
+    <script type="text/javascript" src="main.js"/></script>
+    
     <link rel="stylesheet" type="text/css" href="style.css">
   </head>
-  <body onload="">
-    <!-- <button id= "start-button" class="w3-button w3-xlarge" onclick="fullscreen()">Start</button> -->
-    <!-- <button id= "play-button" class="w3-button w3-xlarge" onclick="opengame()">Play</button> -->
+  <body onload="init()">
+    <button id= "start-button" class="w3-button w3-xlarge" onclick="fullscreen()">Start</button>
+    <button id= "play-button" class="w3-button w3-xlarge" onclick="opengame()">Play</button>
     <canvas id="canvas" width="1" height="1">
       Sorry, browser does not support canvas.
     </canvas>
