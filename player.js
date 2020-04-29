@@ -15,6 +15,16 @@ class Player {
     get y() {
         return this._y;
     }
+    get r() {
+        return this._r;
+    }
+    
+    set y(val) {
+        this._y = val;
+    }
+    set x(val) {
+        this._x = val;
+    }
 
     draw(ctx) {
         if (this._first) {

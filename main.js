@@ -10,6 +10,9 @@ var bounceCounter;
 var accAvg;
 var accCount;
 var player;
+var obstacles;
+var score;
+var playing;
 
 function drawLog() {
   if (logString.length == 0)
@@ -79,9 +82,6 @@ function handleMotion(event) {
     accAvg += accX + accY + accZ;
     accCount++;
 
-    var acceleration_g_x = event.accelerationIncludingGravity.x;
-    var acceleration_g_y = event.accelerationIncludingGravity.y;
-    var acceleration_g_z = event.accelerationIncludingGravity.z;
 }
 
 function init() {
@@ -97,8 +97,9 @@ function init() {
   document.querySelector('#start-button').addEventListener('click', function() { document.documentElement.style.setProperty('--play-display', 'initial');});
   
   document.onkeydown = function(evt) {
-    if(evt.key == "Escape"){
-        document.documentElement.style.setProperty('--game-display', 'none');
+    if(evt.key == " "){
+        player.setSpeed(-2 * windowHeight/412);
+        //document.documentElement.style.setProperty('--game-display', 'none');
     }
   }
   firstEvent = false;
@@ -106,84 +107,110 @@ function init() {
   if (window.DeviceOrientationEvent) {
     window.addEventListener("deviceorientation", handleOrientation, true);
   } else {
-    alert('device orientation not supported');
+    //alert('device orientation not supported');
     // add fallback code here, as necessary
   }
   if (window.DeviceMotionEvent) {
     window.addEventListener('devicemotion', handleMotion, false);
   } else {
-    alert('device motion not supported');
+    //alert('device motion not supported');
   }
   
   canvas = document.getElementById("canvas");
   ctx = canvas.getContext("2d"); 
 }
 
-  function opengame() {
-    lock('landscape-primary');
-    windowWidth = window.innerWidth;
-    windowHeight = window.innerHeight;
-    if (windowHeight > windowWidth) {
-      windowHeight = windowWidth;
-      windowWidth = window.innerHeight;
-    }
-    bounceCounter = 0;
-    accCount = 0;
-    accAvg = 0;
-    player = new Player(windowWidth/2, windowHeight/2);    
-    timer=setInterval(draw, 20);
-
-    //loadMapOne();
-  }
-  
-  function closegame() {
-    unlock();
+function opengame() {
+  lock('landscape-primary');
+  windowWidth = window.innerWidth;
+  windowHeight = window.innerHeight;
+  if (windowHeight > windowWidth) {
+    windowHeight = windowWidth;
+    windowWidth = window.innerHeight;
   }
 
-  function draw() {
-    ctx.canvas.width  = window.innerWidth;
-    ctx.canvas.height = window.innerHeight;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = getComputedStyle(document.documentElement)
-    .getPropertyValue('--my-variable-name');
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle = "#003300";
-    ctx.font = '30px serif';
+  keepAwake();
 
-    //logString = bounceCounter + "\n" + accAvg;
+  bounceCounter = 0;
+  accCount = 0;
+  accAvg = 0;
+  player = new Player(windowWidth/2, windowHeight/2);    
 
-    drawLog();
+  obstacles = new ObstacleGenerator(0, 0, windowHeight, windowWidth);
+  obstacles.startGenerating();
+  score = 0;
+  playing = true;
+  timer=setInterval(draw, 20);
 
+  //loadMapOne();
+}
+
+function closegame() {
+  unlock();
+}
+
+function doLose() {
+  logString = "You lost. Final score: " + score;
+  obstacles.stopGenerating();
+  playing = false;
+  player.setSpeed(0);
+}
+
+function draw() {
+  ctx.canvas.width  = window.innerWidth;
+  ctx.canvas.height = window.innerHeight;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#DDEEAA"
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = "#003300";
+  ctx.font = '30px serif';
+
+  //logString = bounceCounter + "\n" + accAvg;
+  if (playing) {
     if (accCount > 0) {
       var acc = accAvg / accCount;
-      if (acc > 10)
-        player.setSpeed(-2);
-      if (acc > 15)  
-        player.setSpeed(-6);
+      if (acc > 3)
+        player.setSpeed(-2 * windowHeight/412);
+      if (acc > 8)  
+        player.setSpeed(-6) * windowHeight/412;
       accAvg = 0;
       accCount = 0;
     }
-    player.applyForce(0.1);
-    player.draw(ctx);
+    player.applyForce(0.08 * windowHeight/412);
+    if (player.y > windowHeight)
+      player.y = windowHeight;
+    if (player.y < 0)
+      player.y = 0;
 
-    /*precalcdeadlycirclelist.forEach(function(entry) {
-      ctx.fillStyle = entry.color;
-      ctx.beginPath();
-      ctx.arc(entry.x, entry.y, entry.radius, 0, 2 * Math.PI, false);
-      ctx.fill();
-    });
-    precalcobjectlist.forEach(function(entry) {
-      ctx.fillStyle = entry.color;
-      ctx.fillRect(entry.left,entry.top,entry.width,entry.height);
-    });
-    calcGravitationsbeschleunigung();
-    doInteractions();
-    if (dead) {
-      circle.x = startpoint.x;
-      circle.y = startpoint.y;
-      dead = false;
-    } else {
-      calcCirclePos();
-    }
-    */
+    obstacles.moveObstacles();
+    logString = "Score: " + score++;
+    if (obstacles.collide(player))
+      doLose();
+  }
+
+  player.draw(ctx);
+  obstacles.draw(ctx);
+  drawLog();
+
+
+  /*precalcdeadlycirclelist.forEach(function(entry) {
+    ctx.fillStyle = entry.color;
+    ctx.beginPath();
+    ctx.arc(entry.x, entry.y, entry.radius, 0, 2 * Math.PI, false);
+    ctx.fill();
+  });
+  precalcobjectlist.forEach(function(entry) {
+    ctx.fillStyle = entry.color;
+    ctx.fillRect(entry.left,entry.top,entry.width,entry.height);
+  });
+  calcGravitationsbeschleunigung();
+  doInteractions();
+  if (dead) {
+    circle.x = startpoint.x;
+    circle.y = startpoint.y;
+    dead = false;
+  } else {
+    calcCirclePos();
+  }
+  */
 }
